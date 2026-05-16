@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>灯光控制器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .title {
+            text-align: center;
+            color: white;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .switch-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .light-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .light-icon {
+            font-size: 48px;
+            transition: all 0.3s ease;
+        }
+
+        .light-icon.on {
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+        }
+
+        .light-icon.off {
+            opacity: 0.3;
+        }
+
+        .light-label {
+            color: white;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 70px;
+            height: 38px;
+            cursor: pointer;
+        }
+
+        .toggle-track {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 19px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-track {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+        }
+
+        .toggle-thumb {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .toggle-thumb {
+            left: 35px;
+        }
+
+        .delay-section {
+            margin-top: 20px;
+        }
+
+        .delay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .delay-label {
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .delay-toggle {
+            width: 50px;
+            height: 28px;
+        }
+
+        .delay-toggle .toggle-track {
+            height: 28px;
+            border-radius: 14px;
+        }
+
+        .delay-toggle .toggle-thumb {
+            top: 2px;
+            left: 2px;
+            width: 24px;
+            height: 24px;
+        }
+
+        .delay-toggle.active .toggle-thumb {
+            left: 24px;
+        }
+
+        .time-picker {
+            padding: 15px 0;
+            transition: all 0.3s ease;
+        }
+
+        .time-picker.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .picker-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .picker-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .picker-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+        }
+
+        .picker-scroll {
+            width: 80px;
+            height: 150px;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .picker-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .picker-options {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 0;
+        }
+
+        .picker-option {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 24px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .picker-option.selected {
+            color: white;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .status-bar {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .status-bar.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4ade80;
+        }
+
+        .status-bar.error {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f87171;
+        }
+
+        .status-bar.loading {
+            background: rgba(255, 193, 7, 0.2);
+            color: #fcd34d;
+        }
+
+        @media (max-width: 480px) {
+            .title {
+                font-size: 26px;
+                margin-bottom: 25px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .picker-scroll {
+                width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">💡 灯光控制器</h1>
+        
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">灯光开关</div>
+                </div>
+            </div>
+            
+            <div class="switch-section">
+                <div class="light-status">
+                    <span class="light-icon off" id="lightIcon">💡</span>
+                    <span class="light-label" id="lightLabel">已关闭</span>
+                </div>
+                <div class="toggle-switch" id="lightSwitch">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">延迟关机</div>
+                </div>
+            </div>
+            
+            <div class="delay-section">
+                <div class="delay-header">
+                    <span class="delay-label">启用延迟关机</span>
+                    <div class="toggle-switch delay-toggle" id="delaySwitch">
+                        <div class="toggle-track"></div>
+                        <div class="toggle-thumb"></div>
+                    </div>
+                </div>
+                
+                <div class="time-picker" id="timePicker">
+                    <div class="picker-container">
+                        <div class="picker-column">
+                            <span class="picker-label">小时</span>
+                            <div class="picker-scroll" id="hourPicker">
+                                <div class="picker-options" id="hourOptions"></div>
+                            </div>
+                        </div>
+                        <div class="picker-column">
+                            <span class="picker-label">分钟</span>
+                            <div class="picker-scroll" id="minutePicker">
+                                <div class="picker-options" id="minuteOptions"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar" id="statusBar">准备就绪</div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            host: 'api.strandiot.top',
+            port: '8080',
+            devKey: '123',  // 改我
+            deviceId: '123', // 改我
+            switchMsgId: 16, // 改我
+            delayMsgId: 17, // 改我
+            switchTag: 1    // 开关反转标记
+        };
+
+        let lightOn = false;
+        let delayEnabled = false;
+        let selectedHours = 0;
+        let selectedMinutes = 30;
+        let remainingSeconds = 0;
+        let statusInterval = null;
+        let isHourScrolling = false;
+        let isMinuteScrolling = false;
+        let isProgrammaticScroll = false;
+
+        function getApiUrl() {
+            return `http://${CONFIG.host}:${CONFIG.port}/api/command/execute/devKey`;
+        }
+
+        function getStatusUrl() {
+            return `http://${CONFIG.host}:${CONFIG.port}/api/device/${CONFIG.deviceId}/msg/${CONFIG.delayMsgId}/deviceKey?devKey=${CONFIG.devKey}`;
+        }
+
+        function getSwitchValue(targetOn) {
+            if (CONFIG.switchTag === 0) {
+                return targetOn ? 1 : 0;
+            } else {
+                return targetOn ? 0 : 1;
+            }
+        }
+
+        function updateStatus(message, type = '') {
+            const statusBar = document.getElementById('statusBar');
+            statusBar.textContent = message;
+            statusBar.className = 'status-bar ' + type;
+        }
+
+        function updateLightUI(on) {
+            const icon = document.getElementById('lightIcon');
+            const label = document.getElementById('lightLabel');
+            const toggle = document.getElementById('lightSwitch');
+            
+            if (on) {
+                icon.classList.remove('off');
+                icon.classList.add('on');
+                label.textContent = '已开启';
+                toggle.classList.add('active');
+            } else {
+                icon.classList.remove('on');
+                icon.classList.add('off');
+                label.textContent = '已关闭';
+                toggle.classList.remove('active');
+            }
+            lightOn = on;
+        }
+
+        function updateDelayUI(enabled) {
+            const toggle = document.getElementById('delaySwitch');
+            const timePicker = document.getElementById('timePicker');
+            
+            if (enabled) {
+                toggle.classList.add('active');
+                timePicker.classList.add('disabled');
+            } else {
+                toggle.classList.remove('active');
+                timePicker.classList.remove('disabled');
+            }
+            delayEnabled = enabled;
+        }
+
+        function checkAndUpdateDelaySwitch() {
+            const toggle = document.getElementById('delaySwitch');
+            const isZero = selectedHours === 0 && selectedMinutes === 0;
+            
+            if (isZero) {
+                toggle.classList.add('disabled');
+                toggle.style.pointerEvents = 'none';
+                toggle.style.opacity = '0.4';
+            } else {
+                toggle.classList.remove('disabled');
+                toggle.style.pointerEvents = 'auto';
+                toggle.style.opacity = '1';
+            }
+        }
+
+        function initPickers() {
+            const hourOptions = document.getElementById('hourOptions');
+            const minuteOptions = document.getElementById('minuteOptions');
+
+            for (let i = 0; i < 2; i++) {
+                const emptyOption = document.createElement('div');
+                emptyOption.className = 'picker-option';
+                emptyOption.dataset.value = '';
+                emptyOption.textContent = '';
+                hourOptions.appendChild(emptyOption);
+            }
+
+            for (let i = 0; i <= 24; i++) {
+                const option = document.createElement('div');
+                option.className = 'picker-option';
+                option.dataset.value = i;
+                option.textContent = i;
+                if (i === selectedHours) {
+                    option.classList.add('selected');
+                }
+                hourOptions.appendChild(option);
+            }
+
+            for (let i = 0; i < 2; i++) {
+                const emptyOption = document.createElement('div');
+                emptyOption.className = 'picker-option';
+                emptyOption.dataset.value = '';
+                emptyOption.textContent = '';
+                hourOptions.appendChild(emptyOption);
+            }
+
+            for (let i = 0; i < 2; i++) {
+                const emptyOption = document.createElement('div');
+                emptyOption.className = 'picker-option';
+                emptyOption.dataset.value = '';
+                emptyOption.textContent = '';
+                minuteOptions.appendChild(emptyOption);
+            }
+
+            for (let i = 0; i <= 59; i++) {
+                const option = document.createElement('div');
+                option.className = 'picker-option';
+                option.dataset.value = i;
+                option.textContent = i;
+                if (i === selectedMinutes) {
+                    option.classList.add('selected');
+                }
+                minuteOptions.appendChild(option);
+            }
+
+            for (let i = 0; i < 2; i++) {
+                const emptyOption = document.createElement('div');
+                emptyOption.className = 'picker-option';
+                emptyOption.dataset.value = '';
+                emptyOption.textContent = '';
+                minuteOptions.appendChild(emptyOption);
+            }
+
+            setupScrollPicker('hourPicker', 'hourOptions', true);
+            setupScrollPicker('minutePicker', 'minuteOptions', false);
+
+            updatePickerPositions();
+            checkAndUpdateDelaySwitch();
+        }
+
+        function setupScrollPicker(pickerId, optionsId, isHour) {
+            const picker = document.getElementById(pickerId);
+            const options = document.getElementById(optionsId);
+            const ITEM_HEIGHT = 50;
+            const PADDING_TOP = 50;
+            const CONTAINER_HEIGHT = 150;
+
+            const updateSelection = () => {
+                if (delayEnabled) return;
+                
+                const optionsArr = options.querySelectorAll('.picker-option');
+                const maxIndex = optionsArr.length - 3;
+                const scrollTop = picker.scrollTop;
+                
+                const centerPosition = scrollTop + CONTAINER_HEIGHT / 2;
+                let targetIndex = Math.round((centerPosition - PADDING_TOP) / ITEM_HEIGHT);
+                
+                targetIndex = Math.max(2, Math.min(targetIndex, maxIndex));
+
+                optionsArr.forEach((opt, idx) => {
+                    opt.classList.remove('selected');
+                    if (idx === targetIndex) {
+                        opt.classList.add('selected');
+                        const value = parseInt(opt.dataset.value);
+                        if (!isNaN(value)) {
+                            if (isHour) {
+                                selectedHours = value;
+                            } else {
+                                selectedMinutes = value;
+                            }
+                            checkAndUpdateDelaySwitch();
+                        }
+                    }
+                });
+
+                const targetScroll = targetIndex * ITEM_HEIGHT;
+                if (Math.abs(picker.scrollTop - targetScroll) > 1) {
+                    isProgrammaticScroll = true;
+                    picker.scrollTo({
+                        top: targetScroll,
+                        behavior: 'smooth'
+                    });
+                    setTimeout(() => {
+                        isProgrammaticScroll = false;
+                    }, 300);
+                }
+            };
+
+            let scrollTimeout;
+            picker.addEventListener('scroll', () => {
+                if (isProgrammaticScroll) return;
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(updateSelection, 100);
+            });
+
+            picker.addEventListener('touchmove', (e) => {
+                if (delayEnabled) e.preventDefault();
+            }, { passive: !delayEnabled });
+
+            picker.addEventListener('wheel', (e) => {
+                if (delayEnabled) e.preventDefault();
+            }, { passive: !delayEnabled });
+        }
+
+        function updatePickerPositions() {
+            const hourPicker = document.getElementById('hourPicker');
+            const minutePicker = document.getElementById('minutePicker');
+            const hourOptions = document.getElementById('hourOptions');
+            const minuteOptions = document.getElementById('minuteOptions');
+            const ITEM_HEIGHT = 50;
+
+            const hourOpts = hourOptions.querySelectorAll('.picker-option');
+            let hourIndex = Array.from(hourOpts).findIndex(o => o.dataset.value === String(selectedHours));
+            if (hourIndex >= 0) {
+                isProgrammaticScroll = true;
+                hourPicker.scrollTo({
+                    top: hourIndex * ITEM_HEIGHT,
+                    behavior: 'smooth'
+                });
+                setTimeout(() => {
+                    isProgrammaticScroll = false;
+                }, 300);
+            }
+
+            const minuteOpts = minuteOptions.querySelectorAll('.picker-option');
+            let minuteIndex = Array.from(minuteOpts).findIndex(o => o.dataset.value === String(selectedMinutes));
+            if (minuteIndex >= 0) {
+                isProgrammaticScroll = true;
+                minutePicker.scrollTo({
+                    top: minuteIndex * ITEM_HEIGHT,
+                    behavior: 'smooth'
+                });
+                setTimeout(() => {
+                    isProgrammaticScroll = false;
+                }, 300);
+            }
+        }
+
+        function updatePickerSelections() {
+            const hourOptions = document.getElementById('hourOptions');
+            const minuteOptions = document.getElementById('minuteOptions');
+            
+            const hourOpts = hourOptions.querySelectorAll('.picker-option');
+            hourOpts.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === String(selectedHours)) {
+                    opt.classList.add('selected');
+                }
+            });
+            
+            const minuteOpts = minuteOptions.querySelectorAll('.picker-option');
+            minuteOpts.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.value === String(selectedMinutes)) {
+                    opt.classList.add('selected');
+                }
+            });
+            
+            updatePickerPositions();
+        }
+
+        async function sendLightControl(targetOn) {
+            const switchValue = getSwitchValue(targetOn);
+            
+            const payload = {
+                devKey: CONFIG.devKey,
+                deviceId: CONFIG.deviceId,
+                iotMsgId: CONFIG.switchMsgId,
+                topic: "serverMsg/4/",
+                content: JSON.stringify({ switchStatus: switchValue })
+            };
+
+            updateStatus('发送请求中...', 'loading');
+
+            try {
+                const response = await fetch(getApiUrl(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateLightUI(targetOn);
+                    updateStatus(targetOn ? '灯光已开启' : '灯光已关闭', 'success');
+                } else {
+                    updateStatus('操作失败: ' + (result.message || '未知错误'), 'error');
+                }
+            } catch (error) {
+                updateStatus('请求失败: ' + error.message, 'error');
+            }
+        }
+
+        async function sendDelayAction() {
+            const totalSeconds = selectedHours * 3600 + selectedMinutes * 60;
+            const createTime = Math.floor(Date.now() / 1000);
+            const actionValue = CONFIG.switchTag === 0 ? 0 : 1;
+            
+            const payload = {
+                devKey: CONFIG.devKey,
+                deviceId: CONFIG.deviceId,
+                iotMsgId: CONFIG.delayMsgId,
+                topic: "serverMsg/4/",
+                content: JSON.stringify({
+                    action: actionValue,
+                    createTime: createTime * 1000000,
+                    delaySeconds: totalSeconds,
+                    status: 1
+                })
+            };
+
+            updateStatus('发送延迟设置...', 'loading');
+
+            try {
+                const response = await fetch(getApiUrl(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateDelayUI(true);
+                    updateStatus(`延迟关机已设置: ${selectedHours}小时${selectedMinutes}分钟后自动关闭`, 'success');
+                    setTimeout(() => {
+                        startStatusPolling();
+                    }, 2000);
+                } else {
+                    updateStatus('设置失败: ' + (result.message || '未知错误'), 'error');
+                }
+            } catch (error) {
+                updateStatus('请求失败: ' + error.message, 'error');
+            }
+        }
+
+        async function cancelDelayAction() {
+            const createTime = Math.floor(Date.now() / 1000);
+            const actionValue = CONFIG.switchTag === 0 ? 0 : 1;
+            
+            const payload = {
+                devKey: CONFIG.devKey,
+                deviceId: CONFIG.deviceId,
+                iotMsgId: CONFIG.delayMsgId,
+                topic: "serverMsg/4/",
+                content: JSON.stringify({
+                    action: actionValue,
+                    createTime: createTime * 1000000,
+                    delaySeconds: 0,
+                    status: 0
+                })
+            };
+
+            updateStatus('取消延迟关机...', 'loading');
+
+            try {
+                const response = await fetch(getApiUrl(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateDelayUI(false);
+                    stopStatusPolling();
+                    updateStatus('延迟关机已取消', 'success');
+                } else {
+                    updateStatus('取消失败: ' + (result.message || '未知错误'), 'error');
+                    updateDelayUI(false);
+                    stopStatusPolling();
+                }
+            } catch (error) {
+                updateStatus('请求失败: ' + error.message, 'error');
+                updateDelayUI(false);
+                stopStatusPolling();
+            }
+        }
+
+        async function fetchDelayStatus() {
+            try {
+                const response = await fetch(getStatusUrl(), {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (result.code === 1 && result.data && result.data.content) {
+                    const content = JSON.parse(result.data.content);
+                    
+                    if (content.status === 1) {
+                        const now = Math.floor(Date.now() / 1000);
+                        const createTimeSec = Math.floor(content.createTime / 1000000);
+                        remainingSeconds = content.delaySeconds - (now - createTimeSec);
+                        
+                        if (remainingSeconds <= 0) {
+                            updateDelayUI(false);
+                            updateStatus('延迟关机已结束', 'success');
+                            stopStatusPolling();
+                            return;
+                        }
+                        
+                        selectedHours = Math.floor(content.delaySeconds / 3600);
+                        selectedMinutes = Math.floor((content.delaySeconds % 3600) / 60);
+                        updatePickerSelections();
+                        
+                        updateDelayUI(true);
+                        
+                        const hoursLeft = Math.floor(remainingSeconds / 3600);
+                        const minutesLeft = Math.floor((remainingSeconds % 3600) / 60);
+                        const secondsLeft = remainingSeconds % 60;
+                        
+                        if (hoursLeft > 0) {
+                            updateStatus(`延迟关机进行中: ${hoursLeft}小时${minutesLeft}分${secondsLeft}秒后自动关闭`, 'success');
+                        } else if (minutesLeft > 0) {
+                            updateStatus(`延迟关机进行中: ${minutesLeft}分${secondsLeft}秒后自动关闭`, 'success');
+                        } else {
+                            updateStatus(`延迟关机进行中: ${secondsLeft}秒后自动关闭`, 'success');
+                        }
+                    } else {
+                        updateDelayUI(false);
+                        stopStatusPolling();
+                        updateStatus('延迟关机已取消', 'success');
+                    }
+                } else {
+                    updateDelayUI(false);
+                    stopStatusPolling();
+                }
+            } catch (error) {
+                console.log('获取状态失败:', error);
+            }
+        }
+
+        function startStatusPolling() {
+            stopStatusPolling();
+            fetchDelayStatus();
+            statusInterval = setInterval(fetchDelayStatus, 5000);
+        }
+
+        function stopStatusPolling() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+                statusInterval = null;
+            }
+        }
+
+        async function fetchSwitchStatus() {
+            const statusUrl = `http://${CONFIG.host}:${CONFIG.port}/api/device/${CONFIG.deviceId}/msg/${CONFIG.switchMsgId}/deviceKey?devKey=${CONFIG.devKey}`;
+            
+            try {
+                const response = await fetch(statusUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (result.code === 1 && result.data && result.data.content) {
+                    const content = JSON.parse(result.data.content);
+                    
+                    if (content.switchStatus !== undefined) {
+                        const isOn = CONFIG.switchTag === 0 
+                            ? (content.switchStatus === 1) 
+                            : (content.switchStatus === 0);
+                        
+                        updateLightUI(isOn);
+                    }
+                }
+            } catch (error) {
+                console.log('获取开关状态失败:', error);
+            }
+        }
+
+        document.getElementById('lightSwitch').addEventListener('click', () => {
+            sendLightControl(!lightOn);
+        });
+
+        document.getElementById('delaySwitch').addEventListener('click', () => {
+            if (selectedHours === 0 && selectedMinutes === 0) return;
+            
+            if (!delayEnabled) {
+                sendDelayAction();
+            } else {
+                cancelDelayAction();
+            }
+        });
+
+        initPickers();
+        fetchSwitchStatus();
+        startStatusPolling();
+    </script>
+</body>
+</html>
